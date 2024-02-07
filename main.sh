@@ -90,12 +90,11 @@ function base_package() {
     sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
     sysctl -w net.ipv6.conf.default.disable_ipv6=1  >/dev/null 2>&1
     sudo apt install software-properties-common -y
-    sudo add-apt-repository ppa:vbernat/haproxy-2.7 -y
     sudo apt update && apt upgrade -y
     # linux-tools-common util-linux gnupg gnupg2 gnupg1  \
     sudo apt install squid nginx zip pwgen openssl netcat bash-completion  \
     curl socat xz-utils wget apt-transport-https dnsutils socat \
-    tar wget curl ruby zip unzip p7zip-full python3-pip haproxy libc6  \
+    tar wget curl ruby zip unzip p7zip-full  \
     msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent netfilter-persistent \
     net-tools  jq openvpn easy-rsa python3-certbot-nginx p7zip-full tuned fail2ban -y
     apt-get clean all; sudo apt-get autoremove -y
@@ -162,7 +161,7 @@ function install_xray(){
     mv xray /usr/sbin/xray
     print_success "Xray Core"
     
-    cat /etc/xray/xray.crt /etc/xray/xray.key | tee /etc/haproxy/xray.pem
+    cat /etc/xray/xray.crt /etc/xray/xray.key
     wget -O /etc/xray/config.json "${REPO}xray/config.json" >/dev/null 2>&1 
     #wget -O /usr/sbin/xray/ "${REPO}bin/xray" >/dev/null 2>&1
     wget -O /usr/sbin/websocket "${REPO}bin/ws" >/dev/null 2>&1
@@ -233,7 +232,6 @@ function pasang_rclone() {
 ### Take Config
 function download_config(){
     print_install "Install configuration package configuration"
-    wget -O /etc/haproxy/haproxy.cfg "${REPO}config/haproxy.cfg" >/dev/null 2>&1
     wget -O /etc/nginx/conf.d/xray.conf "${REPO}config/xray.conf" >/dev/null 2>&1
     sed -i "s/xxx/${domain}/g" /etc/nginx/conf.d/xray.conf
     wget -O /etc/nginx/nginx.conf "${REPO}config/nginx.conf" >/dev/null 2>&1
@@ -412,7 +410,6 @@ function enable_services(){
     systemctl enable --now dropbear
     systemctl enable --now openvpn
     systemctl enable --now cron
-    systemctl enable --now haproxy
     systemctl enable --now netfilter-persistent
     systemctl enable --now squid
     systemctl enable --now ws
@@ -451,7 +448,6 @@ function finish(){
     curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
     cp /etc/openvpn/*.ovpn /var/www/html/
     # sed -i "s/xxx/${domain}/g" /var/www/html/index.html
-    sed -i "s/xxx/${domain}/g" /etc/haproxy/haproxy.cfg
     sed -i "s/xxx/${MYIP}/g" /etc/squid/squid.conf
     chown -R www-data:www-data /etc/msmtprc
 
@@ -472,7 +468,6 @@ function finish(){
     echo "    │   - OpenVPN TCP             : 443, 1194             │"
     echo "    │   - OpenVPN UDP             : 2200                  │"
     echo "    │   - Nginx Webserver         : 443, 80, 81           │"
-    echo "    │   - Haproxy Loadbalancer    : 443, 80               │"
     echo "    │   - DNS Server              : 443, 53               │"
     echo "    │   - DNS Client              : 443, 88               │"
     echo "    │   - XRAY DNS (SLOWDNS)      : 443, 80, 53           │"
